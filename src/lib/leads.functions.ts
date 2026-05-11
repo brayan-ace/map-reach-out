@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const SearchSchema = z.object({
   location: z.string().min(2).max(200),
-  radiusKm: z.number().min(1).max(50),
+  radiusKm: z.number().min(1).max(100),
   keyword: z.string().max(100).optional().default(""),
 });
 
@@ -212,14 +212,40 @@ export const searchLeads = createServerFn({ method: "POST" })
         await new Promise((r) => setTimeout(r, 1500));
       }
     } else {
-      // Fan out across category groups in parallel
-      const results = await Promise.all(
+      // Generic discovery: fan out across category groups (nearby) AND a text search
+      // for "businesses" — the text search reaches places nearby may miss.
+      const nearbyPromise = Promise.all(
         NEARBY_TYPE_GROUPS.map((types) => searchNearby(apiKey, types, center, radiusM)),
       );
-      for (const { places, error } of results) {
+
+      const textPromise = (async () => {
+        const collected: PlaceV1[] = [];
+        let token: string | undefined;
+        let err: string | undefined;
+        for (let page = 0; page < 3; page++) {
+          const { places, nextPageToken, error } = await searchText(
+            apiKey,
+            `businesses in ${center.label}`,
+            center,
+            radiusM,
+            token,
+          );
+          if (error && !err) err = error;
+          collected.push(...places);
+          if (!nextPageToken) break;
+          token = nextPageToken;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        return { places: collected, error: err };
+      })();
+
+      const [nearbyResults, textResult] = await Promise.all([nearbyPromise, textPromise]);
+      for (const { places, error } of nearbyResults) {
         if (error && !firstError) firstError = error;
         for (const p of places) byId.set(p.id, p);
       }
+      if (textResult.error && !firstError) firstError = textResult.error;
+      for (const p of textResult.places) byId.set(p.id, p);
     }
 
     const all = Array.from(byId.values()).filter(
