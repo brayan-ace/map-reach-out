@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const SearchSchema = z.object({
   location: z.string().min(2).max(200),
-  radiusKm: z.number().min(1).max(50),
+  radiusKm: z.number().min(1).max(100),
   keyword: z.string().max(100).optional().default(""),
 });
 
