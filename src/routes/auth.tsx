@@ -327,12 +327,13 @@ function SignupForm({ active }: { active: boolean }) {
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [error, setError] = useState("");
+  const [verifyMsg, setVerifyMsg] = useState("");
 
   const strength = scorePassword(password);
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(""); setVerifyMsg("");
     if (password !== confirm) { setError("Passwords don't match."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setBusy(true);
@@ -340,25 +341,31 @@ function SignupForm({ active }: { active: boolean }) {
       const res = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
       await updateProfile(res.user, { displayName: name });
       await upsertUserDoc(res.user.uid, { uid: res.user.uid, name, email, provider: "email" }, true);
-      navigate({ to: "/" });
+      // Send verification link to the new account
+      try {
+        await sendEmailVerification(res.user, {
+          url: typeof window !== "undefined" ? window.location.origin : "https://example.com",
+        });
+        setVerifyMsg(`Verification link sent to ${email}. Check your inbox (and spam).`);
+      } catch (verr) {
+        console.warn("Could not send verification email", verr);
+      }
+      // Brief pause so the user sees the verification message before redirect
+      setTimeout(() => navigate({ to: "/" }), 1200);
     } catch (err: any) {
-      setError(humanizeAuthError(err?.code) || "Sign up failed.");
+      setError(humanizeAuthError(err?.code, "Sign up failed."));
     } finally { setBusy(false); }
   };
 
   const handleGoogle = async () => {
-    setError(""); setGoogleBusy(true);
-    try {
-      const res = await signInWithPopup(getFirebaseAuth(), googleProvider);
-      const u = res.user;
-      await upsertUserDoc(u.uid, {
-        uid: u.uid, name: u.displayName ?? "", email: u.email ?? "", photoURL: u.photoURL ?? "", provider: "google",
-      }, false);
-      navigate({ to: "/" });
-    } catch (err: any) {
-      const msg = humanizeAuthError(err?.code);
+    setError(""); setVerifyMsg(""); setGoogleBusy(true);
+    const r = await doGoogleSignIn();
+    if (r.ok && !r.redirected) { navigate({ to: "/" }); return; }
+    if (!r.ok) {
+      const msg = humanizeAuthError(r.code);
       if (msg) setError(msg);
-    } finally { setGoogleBusy(false); }
+    }
+    setGoogleBusy(false);
   };
 
   return (
