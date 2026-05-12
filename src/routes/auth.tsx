@@ -35,12 +35,32 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
+  const [redirectError, setRedirectError] = useState<string>("");
 
   useEffect(() => {
     if (!loading && user) {
       navigate({ to: "/" });
     }
   }, [user, loading, navigate]);
+
+  // Process Google redirect result on mount (for iframe / popup-blocked flows)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getRedirectResult(getFirebaseAuth());
+        if (res?.user) {
+          const u = res.user;
+          await upsertUserDoc(u.uid, {
+            uid: u.uid, name: u.displayName ?? "", email: u.email ?? "",
+            photoURL: u.photoURL ?? "", provider: "google",
+          }, false);
+        }
+      } catch (err: any) {
+        const msg = humanizeAuthError(err?.code);
+        if (msg) setRedirectError(msg);
+      }
+    })();
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
