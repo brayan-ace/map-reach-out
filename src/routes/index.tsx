@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { searchLeads, type Lead, type SearchResult } from "@/lib/leads.functions";
+import { useAuth } from "@/lib/auth-context";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +107,15 @@ function buildWhatsAppLink(phone: string | null, businessName: string, template:
 }
 
 function Index() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading, navigate]);
+
   const fetchLeads = useServerFn(searchLeads);
   const [location, setLocation] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -182,6 +193,14 @@ function Index() {
 
   const result = mutation.data;
 
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ background: "var(--gradient-hero)" }}>
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative min-h-screen overflow-hidden"
@@ -224,11 +243,26 @@ function Index() {
             Lead Finder
           </span>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-3 py-1 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             Live Google Maps data
           </span>
+          {user && (
+            <>
+              <span className="hidden md:inline text-xs text-muted-foreground max-w-[160px] truncate">
+                {user.displayName || user.email}
+              </span>
+              <button
+                onClick={() => logout().then(() => navigate({ to: "/auth" }))}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign out
+              </button>
+            </>
+          )}
         </div>
       </div>
 
