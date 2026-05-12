@@ -63,12 +63,22 @@ function AuthPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground" style={{ background: "var(--gradient-hero)" }}>
       {/* Ambient orbs */}
       <div className="orb float-slow" style={{ width: 520, height: 520, top: -120, left: -120, background: "var(--gradient-primary)" }} />
       <div className="orb float-slow" style={{ width: 460, height: 460, bottom: -160, right: -120, background: "var(--gradient-accent)", animationDelay: "-4s" }} />
       <div className="absolute inset-0 grid-bg pointer-events-none" />
 
+      {/* Theme toggle */}
+      <div className="absolute right-4 top-4 z-30">
+        <ThemeToggle />
+      </div>
+
+      {redirectError && (
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/10 px-4 py-1.5 text-xs text-destructive backdrop-blur">
+          {redirectError}
+        </div>
+      )}
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-4 md:p-8">
         <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 glass shadow-[var(--shadow-card)]">
           {/* Desktop sliding layout */}
