@@ -257,23 +257,19 @@ function LoginForm({ active }: { active: boolean }) {
       await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
       navigate({ to: "/" });
     } catch (err: any) {
-      setError(humanizeAuthError(err?.code) || "Sign in failed.");
+      setError(humanizeAuthError(err?.code, "Sign in failed."));
     } finally { setBusy(false); }
   };
 
   const handleGoogle = async () => {
     setError(""); setResetMsg(""); setGoogleBusy(true);
-    try {
-      const res = await signInWithPopup(getFirebaseAuth(), googleProvider);
-      const u = res.user;
-      await upsertUserDoc(u.uid, {
-        uid: u.uid, name: u.displayName ?? "", email: u.email ?? "", photoURL: u.photoURL ?? "", provider: "google",
-      }, false);
-      navigate({ to: "/" });
-    } catch (err: any) {
-      const msg = humanizeAuthError(err?.code);
+    const r = await doGoogleSignIn();
+    if (r.ok && !r.redirected) { navigate({ to: "/" }); return; }
+    if (!r.ok) {
+      const msg = humanizeAuthError(r.code);
       if (msg) setError(msg);
-    } finally { setGoogleBusy(false); }
+    }
+    setGoogleBusy(false);
   };
 
   const handleReset = async () => {
