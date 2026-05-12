@@ -203,6 +203,42 @@ async function upsertUserDoc(uid: string, data: Record<string, unknown>, isNew: 
   }
 }
 
+/**
+ * Google sign-in that works inside iframes (Lovable preview) and when popups
+ * are blocked. Tries popup first; on popup/iframe failure, falls back to
+ * full-page redirect — getRedirectResult() in AuthPage picks up the result
+ * after the user comes back.
+ */
+async function doGoogleSignIn(): Promise<{ ok: boolean; redirected?: boolean; code?: string }> {
+  const auth = getFirebaseAuth();
+  // Inside an iframe popups are nearly always blocked / cross-origin —
+  // skip the popup attempt and go straight to redirect.
+  if (isInIframe()) {
+    await signInWithRedirect(auth, googleProvider);
+    return { ok: true, redirected: true };
+  }
+  try {
+    const res = await signInWithPopup(auth, googleProvider);
+    const u = res.user;
+    await upsertUserDoc(u.uid, {
+      uid: u.uid, name: u.displayName ?? "", email: u.email ?? "",
+      photoURL: u.photoURL ?? "", provider: "google",
+    }, false);
+    return { ok: true };
+  } catch (err: any) {
+    const code = err?.code as string | undefined;
+    if (
+      code === "auth/popup-blocked" ||
+      code === "auth/operation-not-supported-in-this-environment" ||
+      code === "auth/cancelled-popup-request"
+    ) {
+      await signInWithRedirect(auth, googleProvider);
+      return { ok: true, redirected: true };
+    }
+    return { ok: false, code };
+  }
+}
+
 function LoginForm({ active }: { active: boolean }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
