@@ -4,7 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { searchLeads, type Lead, type SearchResult } from "@/lib/leads.functions";
 import { useAuth } from "@/lib/auth-context";
-import { LogOut } from "lucide-react";
+import { LogOut, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -248,6 +249,7 @@ function Index() {
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             Live Google Maps data
           </span>
+          <ThemeToggleBtn />
           {user && (
             <>
               <span className="hidden md:inline text-xs text-muted-foreground max-w-[160px] truncate">
@@ -266,7 +268,7 @@ function Index() {
         </div>
       </div>
 
-      <header className="relative z-10 container mx-auto px-4 pt-14 pb-10 max-w-6xl">
+      <header className="relative z-10 container mx-auto px-4 pt-14 pb-10 max-w-6xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 backdrop-blur px-3 py-1 text-xs text-muted-foreground mb-6 animate-rise">
           <Sparkles className="w-3 h-3 text-accent" />
           Built for solo web designers & agencies
@@ -276,12 +278,12 @@ function Index() {
           <br />
           <span className="text-gradient">without a website.</span>
         </h1>
-        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl animate-rise" style={{ animationDelay: "60ms" }}>
+        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-rise" style={{ animationDelay: "60ms" }}>
           Scan any city on Google Maps, surface only the businesses that don't have a website yet,
           and pitch them on WhatsApp in a single tap.
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-6 text-sm text-muted-foreground animate-rise" style={{ animationDelay: "120ms" }}>
+        <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground animate-rise" style={{ animationDelay: "120ms" }}>
           {[
             { k: "1", v: "Enter a city & radius" },
             { k: "2", v: "We filter to no-website leads" },
