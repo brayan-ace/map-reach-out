@@ -224,4 +224,10 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .animate-rise { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  .focus-glow:focus-visible {
+    outline: none;
+    border-color: color-mix(in oklab, var(--primary) 70%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 22%, transparent);
+  }
 }
