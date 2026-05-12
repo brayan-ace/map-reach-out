@@ -193,6 +193,14 @@ function Index() {
 
   const result = mutation.data;
 
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ background: "var(--gradient-hero)" }}>
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative min-h-screen overflow-hidden"
