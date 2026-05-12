@@ -4,9 +4,20 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { getFirebaseAuth, getDb, googleProvider, humanizeAuthError, isInIframe } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Eye, EyeOff, Loader2, Sparkles, Search, MapPin, MessageCircle, CheckCircle2, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { getFirebaseAuth, getDb, googleProvider, humanizeAuthError } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
