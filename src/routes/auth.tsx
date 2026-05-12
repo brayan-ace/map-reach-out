@@ -391,6 +391,7 @@ function SignupForm({ active }: { active: boolean }) {
         </Field>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {verifyMsg && <p className="flex items-start gap-1.5 text-sm text-emerald-400"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{verifyMsg}</p>}
 
         <div className="animate-rise" style={{ animationDelay: "200ms" }}>
           <Button type="submit" disabled={busy || googleBusy} className="h-11 w-full text-sm font-semibold transition-transform hover:scale-[1.01]" style={{ background: "var(--gradient-primary)" }}>
