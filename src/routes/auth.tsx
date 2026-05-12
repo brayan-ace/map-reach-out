@@ -477,3 +477,18 @@ function StrengthBar({ strength }: { strength: 0 | 1 | 2 | 3 }) {
     </div>
   );
 }
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label="Toggle theme"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/40 text-foreground backdrop-blur transition-all hover:bg-background/60 hover:scale-105"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
+}
