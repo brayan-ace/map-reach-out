@@ -36,11 +36,11 @@ export function getDb(): Firestore {
 
 export const googleProvider = new GoogleAuthProvider();
 
-export function humanizeAuthError(code: string | undefined): string {
+export function humanizeAuthError(code: string | undefined, fallback?: string): string {
   switch (code) {
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Incorrect password. Try again.";
+      return "Incorrect email or password. Try again.";
     case "auth/user-not-found":
       return "No account found with this email.";
     case "auth/email-already-in-use":
@@ -56,7 +56,18 @@ export function humanizeAuthError(code: string | undefined): string {
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
       return "";
+    case "auth/popup-blocked":
+      return "Popup was blocked — redirecting you to Google instead…";
+    case "auth/unauthorized-domain":
+      return "This domain isn't authorized in Firebase. Add it under Authentication → Settings → Authorized domains.";
+    case "auth/operation-not-allowed":
+      return "This sign-in method isn't enabled in your Firebase project.";
     default:
-      return "Something went wrong. Please try again.";
+      return fallback || (code ? `Sign-in failed (${code}).` : "Something went wrong. Please try again.");
   }
+}
+
+export function isInIframe(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return window.self !== window.top; } catch { return true; }
 }

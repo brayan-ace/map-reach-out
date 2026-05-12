@@ -4,16 +4,20 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
-import { getFirebaseAuth, getDb, googleProvider, humanizeAuthError } from "@/lib/firebase";
+import { getFirebaseAuth, getDb, googleProvider, humanizeAuthError, isInIframe } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, Sparkles, Search, MapPin, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles, Search, MapPin, MessageCircle, CheckCircle2, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -31,6 +35,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
+  const [redirectError, setRedirectError] = useState<string>("");
 
   useEffect(() => {
     if (!loading && user) {
@@ -38,13 +43,42 @@ function AuthPage() {
     }
   }, [user, loading, navigate]);
 
+  // Process Google redirect result on mount (for iframe / popup-blocked flows)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getRedirectResult(getFirebaseAuth());
+        if (res?.user) {
+          const u = res.user;
+          await upsertUserDoc(u.uid, {
+            uid: u.uid, name: u.displayName ?? "", email: u.email ?? "",
+            photoURL: u.photoURL ?? "", provider: "google",
+          }, false);
+        }
+      } catch (err: any) {
+        const msg = humanizeAuthError(err?.code);
+        if (msg) setRedirectError(msg);
+      }
+    })();
+  }, []);
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground" style={{ background: "var(--gradient-hero)" }}>
       {/* Ambient orbs */}
       <div className="orb float-slow" style={{ width: 520, height: 520, top: -120, left: -120, background: "var(--gradient-primary)" }} />
       <div className="orb float-slow" style={{ width: 460, height: 460, bottom: -160, right: -120, background: "var(--gradient-accent)", animationDelay: "-4s" }} />
       <div className="absolute inset-0 grid-bg pointer-events-none" />
 
+      {/* Theme toggle */}
+      <div className="absolute right-4 top-4 z-30">
+        <ThemeToggle />
+      </div>
+
+      {redirectError && (
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/10 px-4 py-1.5 text-xs text-destructive backdrop-blur">
+          {redirectError}
+        </div>
+      )}
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-4 md:p-8">
         <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 glass shadow-[var(--shadow-card)]">
           {/* Desktop sliding layout */}
@@ -169,6 +203,42 @@ async function upsertUserDoc(uid: string, data: Record<string, unknown>, isNew: 
   }
 }
 
+/**
+ * Google sign-in that works inside iframes (Lovable preview) and when popups
+ * are blocked. Tries popup first; on popup/iframe failure, falls back to
+ * full-page redirect — getRedirectResult() in AuthPage picks up the result
+ * after the user comes back.
+ */
+async function doGoogleSignIn(): Promise<{ ok: boolean; redirected?: boolean; code?: string }> {
+  const auth = getFirebaseAuth();
+  // Inside an iframe popups are nearly always blocked / cross-origin —
+  // skip the popup attempt and go straight to redirect.
+  if (isInIframe()) {
+    await signInWithRedirect(auth, googleProvider);
+    return { ok: true, redirected: true };
+  }
+  try {
+    const res = await signInWithPopup(auth, googleProvider);
+    const u = res.user;
+    await upsertUserDoc(u.uid, {
+      uid: u.uid, name: u.displayName ?? "", email: u.email ?? "",
+      photoURL: u.photoURL ?? "", provider: "google",
+    }, false);
+    return { ok: true };
+  } catch (err: any) {
+    const code = err?.code as string | undefined;
+    if (
+      code === "auth/popup-blocked" ||
+      code === "auth/operation-not-supported-in-this-environment" ||
+      code === "auth/cancelled-popup-request"
+    ) {
+      await signInWithRedirect(auth, googleProvider);
+      return { ok: true, redirected: true };
+    }
+    return { ok: false, code };
+  }
+}
+
 function LoginForm({ active }: { active: boolean }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -187,23 +257,19 @@ function LoginForm({ active }: { active: boolean }) {
       await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
       navigate({ to: "/" });
     } catch (err: any) {
-      setError(humanizeAuthError(err?.code) || "Sign in failed.");
+      setError(humanizeAuthError(err?.code, "Sign in failed."));
     } finally { setBusy(false); }
   };
 
   const handleGoogle = async () => {
     setError(""); setResetMsg(""); setGoogleBusy(true);
-    try {
-      const res = await signInWithPopup(getFirebaseAuth(), googleProvider);
-      const u = res.user;
-      await upsertUserDoc(u.uid, {
-        uid: u.uid, name: u.displayName ?? "", email: u.email ?? "", photoURL: u.photoURL ?? "", provider: "google",
-      }, false);
-      navigate({ to: "/" });
-    } catch (err: any) {
-      const msg = humanizeAuthError(err?.code);
+    const r = await doGoogleSignIn();
+    if (r.ok && !r.redirected) { navigate({ to: "/" }); return; }
+    if (!r.ok) {
+      const msg = humanizeAuthError(r.code);
       if (msg) setError(msg);
-    } finally { setGoogleBusy(false); }
+    }
+    setGoogleBusy(false);
   };
 
   const handleReset = async () => {
@@ -261,12 +327,13 @@ function SignupForm({ active }: { active: boolean }) {
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [error, setError] = useState("");
+  const [verifyMsg, setVerifyMsg] = useState("");
 
   const strength = scorePassword(password);
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(""); setVerifyMsg("");
     if (password !== confirm) { setError("Passwords don't match."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setBusy(true);
@@ -274,25 +341,31 @@ function SignupForm({ active }: { active: boolean }) {
       const res = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
       await updateProfile(res.user, { displayName: name });
       await upsertUserDoc(res.user.uid, { uid: res.user.uid, name, email, provider: "email" }, true);
-      navigate({ to: "/" });
+      // Send verification link to the new account
+      try {
+        await sendEmailVerification(res.user, {
+          url: typeof window !== "undefined" ? window.location.origin : "https://example.com",
+        });
+        setVerifyMsg(`Verification link sent to ${email}. Check your inbox (and spam).`);
+      } catch (verr) {
+        console.warn("Could not send verification email", verr);
+      }
+      // Brief pause so the user sees the verification message before redirect
+      setTimeout(() => navigate({ to: "/" }), 1200);
     } catch (err: any) {
-      setError(humanizeAuthError(err?.code) || "Sign up failed.");
+      setError(humanizeAuthError(err?.code, "Sign up failed."));
     } finally { setBusy(false); }
   };
 
   const handleGoogle = async () => {
-    setError(""); setGoogleBusy(true);
-    try {
-      const res = await signInWithPopup(getFirebaseAuth(), googleProvider);
-      const u = res.user;
-      await upsertUserDoc(u.uid, {
-        uid: u.uid, name: u.displayName ?? "", email: u.email ?? "", photoURL: u.photoURL ?? "", provider: "google",
-      }, false);
-      navigate({ to: "/" });
-    } catch (err: any) {
-      const msg = humanizeAuthError(err?.code);
+    setError(""); setVerifyMsg(""); setGoogleBusy(true);
+    const r = await doGoogleSignIn();
+    if (r.ok && !r.redirected) { navigate({ to: "/" }); return; }
+    if (!r.ok) {
+      const msg = humanizeAuthError(r.code);
       if (msg) setError(msg);
-    } finally { setGoogleBusy(false); }
+    }
+    setGoogleBusy(false);
   };
 
   return (
@@ -318,6 +391,7 @@ function SignupForm({ active }: { active: boolean }) {
         </Field>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {verifyMsg && <p className="flex items-start gap-1.5 text-sm text-emerald-400"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{verifyMsg}</p>}
 
         <div className="animate-rise" style={{ animationDelay: "200ms" }}>
           <Button type="submit" disabled={busy || googleBusy} className="h-11 w-full text-sm font-semibold transition-transform hover:scale-[1.01]" style={{ background: "var(--gradient-primary)" }}>
@@ -401,5 +475,20 @@ function StrengthBar({ strength }: { strength: 0 | 1 | 2 | 3 }) {
       </div>
       {strength > 0 && <p className="text-[11px] text-muted-foreground">Password strength: {labels[strength]}</p>}
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label="Toggle theme"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/40 text-foreground backdrop-blur transition-all hover:bg-background/60 hover:scale-105"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
   );
 }
