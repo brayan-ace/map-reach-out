@@ -760,3 +760,18 @@ function LeadCard({
     </Card>
   );
 }
+
+function ThemeToggleBtn() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label="Toggle theme"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/30 text-foreground backdrop-blur transition-all hover:bg-background/50 hover:scale-105"
+    >
+      {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
