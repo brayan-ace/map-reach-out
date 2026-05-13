@@ -530,14 +530,41 @@ function Index() {
           </Card>
         )}
 
-        {result && !result.error && (
+        {viewingSaved?.result && (
+          <Card className="glass mt-6 p-3 border-0 flex flex-wrap items-center justify-between gap-2 animate-rise">
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-2 px-2">
+              <Eye className="w-4 h-4 text-accent" />
+              Viewing saved results: <span className="text-foreground font-medium">{viewingSaved.name}</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setViewingSaved(null)}
+              className="bg-background/40 border-border/60"
+            >
+              Close
+            </Button>
+          </Card>
+        )}
+
+        {viewingSaved?.result ? (
           <Results
-            result={result}
+            result={viewingSaved.result}
             message={message}
-            previouslySeen={seenSnapshot}
-            onRefresh={runSearch}
+            previouslySeen={{}}
+            onRefresh={() => loadSavedSearch(viewingSaved)}
             refreshing={mutation.isPending}
           />
+        ) : (
+          result && !result.error && (
+            <Results
+              result={result}
+              message={message}
+              previouslySeen={seenSnapshot}
+              onRefresh={runSearch}
+              refreshing={mutation.isPending}
+            />
+          )
         )}
 
         <footer className="mt-20 text-center text-xs text-muted-foreground/70">
