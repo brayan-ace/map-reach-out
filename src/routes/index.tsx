@@ -297,17 +297,17 @@ function Index() {
         </div>
       </div>
 
-      <header className="relative z-10 container mx-auto px-4 pt-14 pb-10 max-w-6xl text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 backdrop-blur px-3 py-1 text-xs text-muted-foreground mb-6 animate-rise">
+      <header className="relative z-10 container mx-auto px-4 pt-8 sm:pt-14 pb-8 sm:pb-10 max-w-6xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 backdrop-blur px-3 py-1 text-xs text-muted-foreground mb-5 sm:mb-6 animate-rise">
           <Sparkles className="w-3 h-3 text-accent" />
           Built for solo web designers & agencies
         </div>
-        <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight leading-[1.02] animate-rise">
+        <h1 className="font-display text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight animate-rise">
           <span className="text-foreground">Find businesses</span>
           <br />
           <span className="text-gradient">without a website.</span>
         </h1>
-        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-rise" style={{ animationDelay: "60ms" }}>
+        <p className="mt-5 sm:mt-6 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-rise" style={{ animationDelay: "60ms" }}>
           Scan any city on Google Maps, surface only the businesses that don't have a website yet,
           and pitch them on WhatsApp in a single tap.
         </p>
