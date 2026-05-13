@@ -151,6 +151,7 @@ function Index() {
   const runSearch = () => {
     if (!location.trim()) return;
     setSeenSnapshot(loadSeen());
+    setViewingSaved(null);
     mutation.mutate();
   };
 
