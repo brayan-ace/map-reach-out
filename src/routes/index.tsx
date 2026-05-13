@@ -463,16 +463,41 @@ function Index() {
               {savedSearches.map((s) => (
                 <div
                   key={s.id}
-                  className="group inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 pl-3 pr-1 py-1 text-sm hover:border-primary/60 hover:bg-background/60 transition-all"
+                  className="group inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/40 pl-3 pr-1 py-1 text-sm hover:border-primary/60 hover:bg-background/60 transition-all"
                 >
-                  <button type="button" onClick={() => loadSavedSearch(s)} className="text-foreground">
+                  <span className="text-foreground">
                     {s.name}
                     <span className="ml-2 text-xs text-muted-foreground tabular-nums">{s.radius}km</span>
+                    {s.result && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-accent">
+                        {s.result.withoutWebsite} leads
+                      </span>
+                    )}
+                  </span>
+                  {s.result && (
+                    <button
+                      type="button"
+                      onClick={() => viewSavedResults(s)}
+                      className="ml-1 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
+                      title="View saved results"
+                      aria-label="View saved results"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => loadSavedSearch(s)}
+                    className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
+                    title="Re-run this search"
+                    aria-label="Re-run this search"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => deleteSaved(s.id)}
-                    className="ml-1 p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     aria-label="Remove saved search"
                   >
                     <Trash2 className="w-3 h-3" />
