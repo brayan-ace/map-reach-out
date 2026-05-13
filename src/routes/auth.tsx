@@ -79,8 +79,16 @@ function AuthPage() {
           {redirectError}
         </div>
       )}
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-4 md:p-8">
-        <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 glass shadow-[var(--shadow-card)]">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-3 sm:p-6 md:p-8">
+        {/* Gradient ring wrapper for premium border */}
+        <div
+          className="relative w-full rounded-[28px] p-[1.5px]"
+          style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 60%, transparent), color-mix(in oklab, var(--accent) 50%, transparent), color-mix(in oklab, var(--primary) 60%, transparent))" }}
+        >
+        <div className="relative w-full overflow-hidden rounded-[26px] glass shadow-[var(--shadow-card)]">
+          {/* Map-style corner pin accents */}
+          <MapAccent className="absolute -top-3 -left-3 z-10 hidden md:block" />
+          <MapAccent className="absolute -bottom-3 -right-3 z-10 rotate-180 hidden md:block" />
           {/* Desktop sliding layout */}
           <div className="relative hidden md:block" style={{ height: 640 }}>
             {/* Sliding visual panel */}
@@ -127,6 +135,20 @@ function AuthPage() {
             </div>
           </div>
         </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MapAccent({ className = "" }: { className?: string }) {
+  return (
+    <div className={`pointer-events-none ${className}`} aria-hidden>
+      <div
+        className="w-12 h-12 rounded-full grid place-items-center text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)]"
+        style={{ background: "var(--gradient-primary)" }}
+      >
+        <MapPin className="w-5 h-5" />
       </div>
     </div>
   );
@@ -136,8 +158,28 @@ function BrandingPanel({ mode, onSwitch, compact }: { mode: Mode; onSwitch: () =
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-none p-10 text-white flex flex-col justify-between"
-      style={{ background: "var(--gradient-hero)" }}
+      style={{
+        background:
+          "radial-gradient(900px 500px at 10% -10%, oklch(0.45 0.22 285 / 0.85), transparent 60%), radial-gradient(700px 400px at 110% 110%, oklch(0.55 0.2 175 / 0.45), transparent 60%), linear-gradient(180deg, oklch(0.16 0.06 270), oklch(0.13 0.05 270))",
+      }}
     >
+      {/* Map-style decorative grid + route line */}
+      <svg
+        className="absolute inset-0 w-full h-full opacity-25"
+        viewBox="0 0 400 600"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <defs>
+          <pattern id="auth-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#auth-grid)" />
+        <path d="M 30 520 Q 120 380 200 360 T 380 120" fill="none" stroke="white" strokeWidth="2" strokeDasharray="6 6" opacity="0.6" />
+        <circle cx="30" cy="520" r="6" fill="white" />
+        <circle cx="380" cy="120" r="6" fill="white" />
+      </svg>
       <div className="absolute inset-0 opacity-30" style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }} />
       <div className="relative">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium backdrop-blur">

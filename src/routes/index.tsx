@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { searchLeads, type Lead, type SearchResult } from "@/lib/leads.functions";
 import { useAuth } from "@/lib/auth-context";
-import { LogOut, Sun, Moon } from "lucide-react";
+import { LogOut, Sun, Moon, UserCircle2, FolderOpen } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ type SavedSearch = {
   keyword: string;
   radius: number;
   savedAt: number;
+  result?: SearchResult;
 };
 
 function loadSeen(): Record<string, number> {
@@ -136,7 +137,6 @@ function Index() {
   const mutation = useMutation<SearchResult, Error, void>({
     mutationFn: () => fetchLeads({ data: { location, radiusKm: radius, keyword } }),
     onSuccess: (data) => {
-      // Mark all returned leads as seen (after we've snapshotted previous state).
       const next = { ...loadSeen() };
       const now = Date.now();
       for (const l of data.leads) {
@@ -144,12 +144,23 @@ function Index() {
       }
       saveSeen(next);
       setSeen(next);
+      // If this matches a saved search, refresh its stored snapshot
+      setSavedSearches((prev) => {
+        const updated = prev.map((s) =>
+          s.location === location && s.keyword === keyword && s.radius === radius
+            ? { ...s, result: data }
+            : s,
+        );
+        if (updated.some((s, i) => s !== prev[i])) persistSaved(updated);
+        return updated;
+      });
     },
   });
 
   const runSearch = () => {
     if (!location.trim()) return;
     setSeenSnapshot(loadSeen());
+    setViewingSaved(null);
     mutation.mutate();
   };
 
@@ -173,17 +184,33 @@ function Index() {
       keyword,
       radius,
       savedAt: Date.now(),
+      result: mutation.data && !mutation.data.error ? mutation.data : undefined,
     };
     const next = [entry, ...savedSearches];
     persistSaved(next);
     setSavedSearches(next);
   };
 
+  const [viewingSaved, setViewingSaved] = useState<SavedSearch | null>(null);
+
   const loadSavedSearch = (s: SavedSearch) => {
     setLocation(s.location);
     setKeyword(s.keyword);
     setRadius(s.radius);
+    setViewingSaved(null);
     setTimeout(runSearch, 0);
+  };
+
+  const viewSavedResults = (s: SavedSearch) => {
+    if (!s.result) {
+      loadSavedSearch(s);
+      return;
+    }
+    setLocation(s.location);
+    setKeyword(s.keyword);
+    setRadius(s.radius);
+    setViewingSaved(s);
+    setTimeout(() => window.scrollTo({ top: 400, behavior: "smooth" }), 50);
   };
 
   const deleteSaved = (id: string) => {
@@ -252,33 +279,44 @@ function Index() {
           <ThemeToggleBtn />
           {user && (
             <>
-              <span className="hidden md:inline text-xs text-muted-foreground max-w-[160px] truncate">
-                {user.displayName || user.email}
-              </span>
+              <Link
+                to="/profile"
+                title="Profile & settings"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <UserCircle2 className="w-4 h-4" />
+                )}
+                <span className="hidden md:inline max-w-[120px] truncate">
+                  {user.displayName || user.email}
+                </span>
+              </Link>
               <button
                 onClick={() => logout().then(() => navigate({ to: "/auth" }))}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
                 title="Sign out"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Sign out
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </>
           )}
         </div>
       </div>
 
-      <header className="relative z-10 container mx-auto px-4 pt-14 pb-10 max-w-6xl text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 backdrop-blur px-3 py-1 text-xs text-muted-foreground mb-6 animate-rise">
+      <header className="relative z-10 container mx-auto px-4 pt-8 sm:pt-14 pb-8 sm:pb-10 max-w-6xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 backdrop-blur px-3 py-1 text-xs text-muted-foreground mb-5 sm:mb-6 animate-rise">
           <Sparkles className="w-3 h-3 text-accent" />
           Built for solo web designers & agencies
         </div>
-        <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight leading-[1.02] animate-rise">
+        <h1 className="font-display text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight animate-rise">
           <span className="text-foreground">Find businesses</span>
           <br />
           <span className="text-gradient">without a website.</span>
         </h1>
-        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-rise" style={{ animationDelay: "60ms" }}>
+        <p className="mt-5 sm:mt-6 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-rise" style={{ animationDelay: "60ms" }}>
           Scan any city on Google Maps, surface only the businesses that don't have a website yet,
           and pitch them on WhatsApp in a single tap.
         </p>
@@ -434,16 +472,41 @@ function Index() {
               {savedSearches.map((s) => (
                 <div
                   key={s.id}
-                  className="group inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 pl-3 pr-1 py-1 text-sm hover:border-primary/60 hover:bg-background/60 transition-all"
+                  className="group inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/40 pl-3 pr-1 py-1 text-sm hover:border-primary/60 hover:bg-background/60 transition-all"
                 >
-                  <button type="button" onClick={() => loadSavedSearch(s)} className="text-foreground">
+                  <span className="text-foreground">
                     {s.name}
                     <span className="ml-2 text-xs text-muted-foreground tabular-nums">{s.radius}km</span>
+                    {s.result && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-accent">
+                        {s.result.withoutWebsite} leads
+                      </span>
+                    )}
+                  </span>
+                  {s.result && (
+                    <button
+                      type="button"
+                      onClick={() => viewSavedResults(s)}
+                      className="ml-1 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
+                      title="View saved results"
+                      aria-label="View saved results"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => loadSavedSearch(s)}
+                    className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
+                    title="Re-run this search"
+                    aria-label="Re-run this search"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => deleteSaved(s.id)}
-                    className="ml-1 p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     aria-label="Remove saved search"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -476,14 +539,41 @@ function Index() {
           </Card>
         )}
 
-        {result && !result.error && (
+        {viewingSaved?.result && (
+          <Card className="glass mt-6 p-3 border-0 flex flex-wrap items-center justify-between gap-2 animate-rise">
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-2 px-2">
+              <Eye className="w-4 h-4 text-accent" />
+              Viewing saved results: <span className="text-foreground font-medium">{viewingSaved.name}</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setViewingSaved(null)}
+              className="bg-background/40 border-border/60"
+            >
+              Close
+            </Button>
+          </Card>
+        )}
+
+        {viewingSaved?.result ? (
           <Results
-            result={result}
+            result={viewingSaved.result}
             message={message}
-            previouslySeen={seenSnapshot}
-            onRefresh={runSearch}
+            previouslySeen={{}}
+            onRefresh={() => loadSavedSearch(viewingSaved)}
             refreshing={mutation.isPending}
           />
+        ) : (
+          result && !result.error && (
+            <Results
+              result={result}
+              message={message}
+              previouslySeen={seenSnapshot}
+              onRefresh={runSearch}
+              refreshing={mutation.isPending}
+            />
+          )
         )}
 
         <footer className="mt-20 text-center text-xs text-muted-foreground/70">
