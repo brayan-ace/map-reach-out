@@ -270,16 +270,27 @@ function Index() {
           <ThemeToggleBtn />
           {user && (
             <>
-              <span className="hidden md:inline text-xs text-muted-foreground max-w-[160px] truncate">
-                {user.displayName || user.email}
-              </span>
+              <Link
+                to="/profile"
+                title="Profile & settings"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <UserCircle2 className="w-4 h-4" />
+                )}
+                <span className="hidden md:inline max-w-[120px] truncate">
+                  {user.displayName || user.email}
+                </span>
+              </Link>
               <button
                 onClick={() => logout().then(() => navigate({ to: "/auth" }))}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
                 title="Sign out"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Sign out
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </>
           )}
