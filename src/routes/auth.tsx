@@ -158,8 +158,28 @@ function BrandingPanel({ mode, onSwitch, compact }: { mode: Mode; onSwitch: () =
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-none p-10 text-white flex flex-col justify-between"
-      style={{ background: "var(--gradient-hero)" }}
+      style={{
+        background:
+          "radial-gradient(900px 500px at 10% -10%, oklch(0.45 0.22 285 / 0.85), transparent 60%), radial-gradient(700px 400px at 110% 110%, oklch(0.55 0.2 175 / 0.45), transparent 60%), linear-gradient(180deg, oklch(0.16 0.06 270), oklch(0.13 0.05 270))",
+      }}
     >
+      {/* Map-style decorative grid + route line */}
+      <svg
+        className="absolute inset-0 w-full h-full opacity-25"
+        viewBox="0 0 400 600"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <defs>
+          <pattern id="auth-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#auth-grid)" />
+        <path d="M 30 520 Q 120 380 200 360 T 380 120" fill="none" stroke="white" strokeWidth="2" strokeDasharray="6 6" opacity="0.6" />
+        <circle cx="30" cy="520" r="6" fill="white" />
+        <circle cx="380" cy="120" r="6" fill="white" />
+      </svg>
       <div className="absolute inset-0 opacity-30" style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }} />
       <div className="relative">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium backdrop-blur">
