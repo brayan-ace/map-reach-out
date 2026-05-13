@@ -137,7 +137,6 @@ function Index() {
   const mutation = useMutation<SearchResult, Error, void>({
     mutationFn: () => fetchLeads({ data: { location, radiusKm: radius, keyword } }),
     onSuccess: (data) => {
-      // Mark all returned leads as seen (after we've snapshotted previous state).
       const next = { ...loadSeen() };
       const now = Date.now();
       for (const l of data.leads) {
@@ -145,6 +144,16 @@ function Index() {
       }
       saveSeen(next);
       setSeen(next);
+      // If this matches a saved search, refresh its stored snapshot
+      setSavedSearches((prev) => {
+        const updated = prev.map((s) =>
+          s.location === location && s.keyword === keyword && s.radius === radius
+            ? { ...s, result: data }
+            : s,
+        );
+        if (updated.some((s, i) => s !== prev[i])) persistSaved(updated);
+        return updated;
+      });
     },
   });
 
