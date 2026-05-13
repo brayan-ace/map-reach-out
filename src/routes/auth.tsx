@@ -79,8 +79,16 @@ function AuthPage() {
           {redirectError}
         </div>
       )}
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-4 md:p-8">
-        <div className="relative w-full overflow-hidden rounded-3xl border border-white/10 glass shadow-[var(--shadow-card)]">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center p-3 sm:p-6 md:p-8">
+        {/* Gradient ring wrapper for premium border */}
+        <div
+          className="relative w-full rounded-[28px] p-[1.5px]"
+          style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 60%, transparent), color-mix(in oklab, var(--accent) 50%, transparent), color-mix(in oklab, var(--primary) 60%, transparent))" }}
+        >
+        <div className="relative w-full overflow-hidden rounded-[26px] glass shadow-[var(--shadow-card)]">
+          {/* Map-style corner pin accents */}
+          <MapAccent className="absolute -top-3 -left-3 z-10 hidden md:block" />
+          <MapAccent className="absolute -bottom-3 -right-3 z-10 rotate-180 hidden md:block" />
           {/* Desktop sliding layout */}
           <div className="relative hidden md:block" style={{ height: 640 }}>
             {/* Sliding visual panel */}
