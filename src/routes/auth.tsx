@@ -135,6 +135,20 @@ function AuthPage() {
             </div>
           </div>
         </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MapAccent({ className = "" }: { className?: string }) {
+  return (
+    <div className={`pointer-events-none ${className}`} aria-hidden>
+      <div
+        className="w-12 h-12 rounded-full grid place-items-center text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)]"
+        style={{ background: "var(--gradient-primary)" }}
+      >
+        <MapPin className="w-5 h-5" />
       </div>
     </div>
   );
