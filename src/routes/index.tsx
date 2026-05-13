@@ -174,17 +174,33 @@ function Index() {
       keyword,
       radius,
       savedAt: Date.now(),
+      result: mutation.data && !mutation.data.error ? mutation.data : undefined,
     };
     const next = [entry, ...savedSearches];
     persistSaved(next);
     setSavedSearches(next);
   };
 
+  const [viewingSaved, setViewingSaved] = useState<SavedSearch | null>(null);
+
   const loadSavedSearch = (s: SavedSearch) => {
     setLocation(s.location);
     setKeyword(s.keyword);
     setRadius(s.radius);
+    setViewingSaved(null);
     setTimeout(runSearch, 0);
+  };
+
+  const viewSavedResults = (s: SavedSearch) => {
+    if (!s.result) {
+      loadSavedSearch(s);
+      return;
+    }
+    setLocation(s.location);
+    setKeyword(s.keyword);
+    setRadius(s.radius);
+    setViewingSaved(s);
+    setTimeout(() => window.scrollTo({ top: 400, behavior: "smooth" }), 50);
   };
 
   const deleteSaved = (id: string) => {
