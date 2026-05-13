@@ -70,6 +70,7 @@ type SavedSearch = {
   keyword: string;
   radius: number;
   savedAt: number;
+  result?: SearchResult;
 };
 
 function loadSeen(): Record<string, number> {
