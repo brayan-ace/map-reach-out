@@ -4,6 +4,16 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { searchLeads, type Lead, type SearchResult } from "@/lib/leads.functions";
 import { useAuth } from "@/lib/auth-context";
+import {
+  type SavedSearch,
+  fetchSavedSearches,
+  loadSavedCache,
+  persistCache,
+  saveSavedSearch,
+  deleteSavedSearch as deleteSavedSearchRemote,
+  updateSavedResult,
+  getOnboardingStatus,
+} from "@/lib/user-data";
 import { LogOut, Sun, Moon, UserCircle2, FolderOpen } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { Button } from "@/components/ui/button";
