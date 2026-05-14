@@ -71,17 +71,6 @@ If you like it — great, we can talk.
 If you don't — no hard feelings, you'll never hear from me again. 🤝`;
 
 const SEEN_KEY = "leadfinder.seen.v1";
-const SAVED_KEY = "leadfinder.saved.v1";
-
-type SavedSearch = {
-  id: string;
-  name: string;
-  location: string;
-  keyword: string;
-  radius: number;
-  savedAt: number;
-  result?: SearchResult;
-};
 
 function loadSeen(): Record<string, number> {
   if (typeof window === "undefined") return {};
@@ -93,17 +82,6 @@ function loadSeen(): Record<string, number> {
 }
 function saveSeen(seen: Record<string, number>) {
   localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
-}
-function loadSaved(): SavedSearch[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-}
-function persistSaved(list: SavedSearch[]) {
-  localStorage.setItem(SAVED_KEY, JSON.stringify(list));
 }
 
 function buildWhatsAppLink(phone: string | null, businessName: string, template: string) {
