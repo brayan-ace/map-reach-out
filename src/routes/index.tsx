@@ -103,6 +103,15 @@ function Index() {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
+      return;
+    }
+    if (user) {
+      // First-time users → onboarding
+      getOnboardingStatus(user.uid)
+        .then((s) => {
+          if (!s.completed) navigate({ to: "/onboarding" });
+        })
+        .catch(() => {});
     }
   }, [user, authLoading, navigate]);
 
@@ -113,14 +122,18 @@ function Index() {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [seen, setSeen] = useState<Record<string, number>>({});
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
-  // Snapshot of "seen" taken right before each search, so the current
-  // results can highlight what's actually new vs. previously-seen.
   const [seenSnapshot, setSeenSnapshot] = useState<Record<string, number>>({});
+  const [viewingSaved, setViewingSaved] = useState<SavedSearch | null>(null);
 
+  // Load seen leads (local) + saved searches (Firestore, with cache)
   useEffect(() => {
     setSeen(loadSeen());
-    setSavedSearches(loadSaved());
-  }, []);
+    if (!user) return;
+    setSavedSearches(loadSavedCache(user.uid));
+    fetchSavedSearches(user.uid)
+      .then(setSavedSearches)
+      .catch(() => {});
+  }, [user]);
 
   const mutation = useMutation<SearchResult, Error, void>({
     mutationFn: () => fetchLeads({ data: { location, radiusKm: radius, keyword } }),
@@ -132,14 +145,17 @@ function Index() {
       }
       saveSeen(next);
       setSeen(next);
-      // If this matches a saved search, refresh its stored snapshot
+      // If this matches a saved search, refresh its stored snapshot remotely + locally
+      if (!user) return;
       setSavedSearches((prev) => {
-        const updated = prev.map((s) =>
-          s.location === location && s.keyword === keyword && s.radius === radius
-            ? { ...s, result: data }
-            : s,
-        );
-        if (updated.some((s, i) => s !== prev[i])) persistSaved(updated);
+        const updated = prev.map((s) => {
+          if (s.location === location && s.keyword === keyword && s.radius === radius) {
+            updateSavedResult(user.uid, s.id, data).catch(() => {});
+            return { ...s, result: data };
+          }
+          return s;
+        });
+        if (updated.some((s, i) => s !== prev[i])) persistCache(user.uid, updated);
         return updated;
       });
     },
@@ -157,14 +173,26 @@ function Index() {
     runSearch();
   };
 
-  const saveCurrent = () => {
-    if (!location.trim()) return;
+  const saveCurrent = async () => {
+    if (!location.trim() || !user) return;
     const name =
       window.prompt(
         "Name this saved search",
         keyword ? `${keyword} in ${location}` : `${location} (${radius}km)`,
       ) ?? "";
     if (!name.trim()) return;
+
+    // If we have no fresh results yet, run the search first so we save the full snapshot.
+    let result: SearchResult | undefined =
+      mutation.data && !mutation.data.error ? mutation.data : undefined;
+    if (!result) {
+      try {
+        result = await fetchLeads({ data: { location, radiusKm: radius, keyword } });
+      } catch {
+        /* save without results if search fails */
+      }
+    }
+
     const entry: SavedSearch = {
       id: crypto.randomUUID(),
       name: name.trim(),
@@ -172,14 +200,13 @@ function Index() {
       keyword,
       radius,
       savedAt: Date.now(),
-      result: mutation.data && !mutation.data.error ? mutation.data : undefined,
+      result: result && !result.error ? result : undefined,
     };
     const next = [entry, ...savedSearches];
-    persistSaved(next);
     setSavedSearches(next);
+    persistCache(user.uid, next);
+    saveSavedSearch(user.uid, entry).catch(() => {});
   };
-
-  const [viewingSaved, setViewingSaved] = useState<SavedSearch | null>(null);
 
   const loadSavedSearch = (s: SavedSearch) => {
     setLocation(s.location);
@@ -202,9 +229,11 @@ function Index() {
   };
 
   const deleteSaved = (id: string) => {
+    if (!user) return;
     const next = savedSearches.filter((s) => s.id !== id);
-    persistSaved(next);
     setSavedSearches(next);
+    persistCache(user.uid, next);
+    deleteSavedSearchRemote(user.uid, id).catch(() => {});
   };
 
   const result = mutation.data;
