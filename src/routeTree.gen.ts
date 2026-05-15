@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
 const ProfileRoute = ProfileRouteImport.update({
@@ -46,6 +47,11 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/saved': typeof AuthenticatedSavedRoute
   '/search': typeof AuthenticatedSearchRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/saved': typeof AuthenticatedSavedRoute
   '/search': typeof AuthenticatedSearchRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
 }
 export interface FileRouteTypes {
@@ -86,9 +95,17 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/dashboard'
+    | '/saved'
     | '/search'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/profile' | '/dashboard' | '/search'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/profile'
+    | '/dashboard'
+    | '/saved'
+    | '/search'
   id:
     | '__root__'
     | '/'
@@ -97,6 +114,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/_authenticated/dashboard'
+    | '/_authenticated/saved'
     | '/_authenticated/search'
   fileRoutesById: FileRoutesById
 }
@@ -152,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/saved': {
+      id: '/_authenticated/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof AuthenticatedSavedRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -164,11 +189,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSavedRoute: AuthenticatedSavedRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
 }
 
